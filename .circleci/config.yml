@@ -18,7 +18,7 @@ jobs:
              cat /tmp/recent_terragrunt_releases | while read recent_terragrunt_release
              do 
                docker build --tag daviddumenil/terragrunt:$recent_terraform_release-$recent_terragrunt_release --build-arg TERRAFORM_VERSION=$recent_terraform_release  --build-arg TERRAGRUNT_VERSION=$recent_terragrunt_release .
-               docker push daviddumenil/terragrunt:$terragrunt:$recent_terraform_release-$recent_terragrunt_release
+               docker push daviddumenil/terragrunt:$recent_terraform_release-$recent_terragrunt_release
              done
            done
 workflows:
