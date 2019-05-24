@@ -1,0 +1,38 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6.5-node-browsers 
+    steps:
+      - setup_remote_docker:
+          version: 17.09.0-ce
+      - checkout
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run: |
+          curl --silent -H 'Content-Type: application/json' -H "Authorization: bearer $GITHUB_API_TOKEN" -X POST --data-binary '{"query":"{\n  repository(owner: \"hasicorp\", name: \"terraform\") {\n    refs(refPrefix: \"refs/tags/\", last: 5, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {\n      edges {\n        node {\n          name\n        }\n      }\n    }\n  }\n}\n","variables":{},"operationName":null}'  https://api.github.com/graphql | jq ".[] | .[] | .[] | .[] | .[] | .[] | .name" | tr -d '"' |  cut -c 2- | grep '^[0-9\.\-]*$' | cut -f 1 -d"-" > /tmp/recent_terraform_releases 
+          curl --silent -H 'Content-Type: application/json' -H "Authorization: bearer $GITHUB_API_TOKEN" -X POST --data-binary '{"query":"{\n  repository(owner: \"gruntwork-io\", name: \"terragrunt\") {\n    refs(refPrefix: \"refs/tags/\", last: 5, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {\n      edges {\n        node {\n          name\n        }\n      }\n    }\n  }\n}\n","variables":{},"operationName":null}'  https://api.github.com/graphql | jq ".[] | .[] | .[] | .[] | .[] | .[] | .name" | tr -d '"' |  cut -c 2- | grep '^[0-9\.\-]*$' | cut -f 1 -d"-" > /tmp/recent_terragrunt_releases
+      - run: echo `cat /tmp/recent_terraform_releases`
+      - run: |
+           cat /tmp/recent_terraform_releases | while read recent_terraform_release
+           do
+             cat /tmp/recent_terragrunt_releases | while read recent_terragrunt_release
+             do 
+               docker build --tag daviddumenil/terragrunt:$recent_terraform_release-$recent_terragrunt_release --build-arg TERRAFORM_VERSION=$recent_terraform_release  --build-arg TERRAGRUNT_VERSION=$recent_terragrunt_release 
+               docker push daviddumenil/terragrunt:$terragrunt:$recent_terraform_release-$recent_terragrunt_release
+             done
+           done
+workflows:
+  version: 2
+  commit-workflow:
+    jobs:
+      - build
+  scheduled-workflow:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
