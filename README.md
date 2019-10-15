@@ -5,7 +5,7 @@ Version format is: `<terraform version>-<terragrunt version>`
 
 Thus:
 ```
-docker pull daviddumenil/terragrunt:0.12.1-0.
+docker pull daviddumenil/terragrunt:0.12.1-0.9.1
 ```
 
 
