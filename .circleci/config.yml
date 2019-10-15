@@ -8,6 +8,10 @@ jobs:
           version: 17.09.0-ce
       - checkout
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --no-cache --no-progress --upgrade curl
       - run: |
           curl --silent -H 'Content-Type: application/json' -H "Authorization: bearer $GITHUB_API_TOKEN" -X POST --data-binary '{"query":"{\n  repository(owner: \"hashicorp\", name: \"terraform\") {\n    refs(refPrefix: \"refs/tags/\", last: 5, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {\n      edges {\n        node {\n          name\n        }\n      }\n    }\n  }\n}\n","variables":{},"operationName":null}'  https://api.github.com/graphql | jq ".[] | .[] | .[] | .[] | .[] | .[] | .name" | tr -d '"' |  cut -c 2- | grep '^[0-9\.\-]*$' | cut -f 1 -d"-" > /tmp/recent_terraform_releases 
           curl --silent -H 'Content-Type: application/json' -H "Authorization: bearer $GITHUB_API_TOKEN" -X POST --data-binary '{"query":"{\n  repository(owner: \"gruntwork-io\", name: \"terragrunt\") {\n    refs(refPrefix: \"refs/tags/\", last: 5, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {\n      edges {\n        node {\n          name\n        }\n      }\n    }\n  }\n}\n","variables":{},"operationName":null}'  https://api.github.com/graphql | jq ".[] | .[] | .[] | .[] | .[] | .[] | .name" | tr -d '"' |  cut -c 2- | grep '^[0-9\.\-]*$' | cut -f 1 -d"-" > /tmp/recent_terragrunt_releases
